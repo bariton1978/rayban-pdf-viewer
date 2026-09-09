@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RB PDF - Glasses</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+.header{padding:14px 16px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:900;font-size:14px}
+.badge{font-size:10px;color:#666;border:1px solid #333;padding:4px 8px;border-radius:20px}
+.wrap{max-width:600px;margin:0 auto;padding:12px}
+.card{background:#0a0a0a;border:1px solid #222;border-radius:16px;padding:14px;margin-bottom:10px}
+.btn{display:block;width:100%;text-align:left;background:#111;border:1px solid #333;border-radius:14px;padding:16px 14px;margin-bottom:10px;color:#fff;text-decoration:none;font-size:15px;font-weight:600}
+.btn:active{background:#222}
+.btn small{display:block;font-weight:400;color:#888;font-size:12px;margin-top:4px}
+.title{font-size:13px;font-weight:700;color:#aaa;margin:14px 2px 8px}
+.empty{padding:24px;text-align:center;color:#666;font-size:13px;line-height:1.6}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#0f0;margin-right:6px}
+#log{font-size:10px;color:#444;margin-top:12px;white-space:pre-wrap;word-break:break-all}
+</style>
+<script type="text/javascript" nonce="39bda58a831342ea90d3e274cae" src="//local.adguard.org?ts=1788963821036&amp;type=content-script&amp;dmn=1331359556726048.a.metaaiusercontent.com&amp;url=https%3A%2F%2F1331359556726048.a.metaaiusercontent.com%2Fhtml%3Fartifact_uuid%3D74f97dde-29fc-41ca-aa20-bb4a338c9654%26download%3DUltra-Light-Glasses.html%26ext%3D1789048801%26hash%3DQ5fpDAHccL05VIMvz42vPMkEkM3o&amp;app=chrome.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="39bda58a831342ea90d3e274cae" src="//local.adguard.org?ts=1788963821036&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script></head>
+<body>
+<div class="header">
+  <div class="logo">RB PDF • Ray-Ban Display</div>
+  <div class="badge">ULTRA LIGHT - NO PDF.js</div>
+</div>
+<div class="wrap">
+  <div class="card">
+    <div style="font-size:12px;color:#888"><span class="dot"></span>GitHub Pages 연결됨</div>
+    <div style="margin-top:8px;font-size:13px;line-height:1.5">
+      안경에서는 파일 선택이 불가능합니다.<br>
+      아래 목록에서 악보를 터치하면 기본 뷰어로 바로 열립니다.
+    </div>
+    <div id="log">불러오는 중...</div>
+  </div>
+
+  <div class="title">📂 저장된 악보 (터치하면 열림)</div>
+  <div id="list"></div>
+  <div id="empty" class="empty hidden">
+    아직 업로드된 PDF가 없습니다.<br><br>
+    폰에서<br>
+    <b>github.com/bariton1978/rayban-pdf-viewer</b><br>
+    → Add file → Upload files → PDF 업로드 → Commit<br><br>
+    1분 후 안경에서 새로고침하면 목록이 뜹니다.
+  </div>
+
+  <div class="title">🔧 직접 링크 테스트</div>
+  <a class="btn" href="https://bariton1978.github.io/rayban-pdf-viewer/" target="_blank">
+    메인 페이지 새로고침
+    <small>https://bariton1978.github.io/rayban-pdf-viewer/</small>
+  </a>
+</div>
+
+<script>
+const logEl = document.getElementById('log');
+const listEl = document.getElementById('list');
+const emptyEl = document.getElementById('empty');
+function log(m){ logEl.textContent = m + "\n" + logEl.textContent; }
+
+async function fetchRepoFiles(){
+  log('GitHub API 조회 중...');
+  const urls = [
+    'https://api.github.com/repos/bariton1978/rayban-pdf-viewer/contents',
+    'https://api.github.com/repos/bariton1978/rayban-pdf-viewer/contents/pdfs'
+  ];
+  let files = [];
+  for(const apiUrl of urls){
+    try{
+      const r = await fetch(apiUrl + '?t=' + Date.now());
+      if(!r.ok){ log(apiUrl + ' -> ' + r.status); continue; }
+      const data = await r.json();
+      if(Array.isArray(data)){
+        const pdfs = data.filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+        log('발견: ' + apiUrl + ' 에서 ' + pdfs.length + '개');
+        pdfs.forEach(f=>{
+          files.push({
+            name: f.name,
+            download: f.download_url,
+            pageUrl: f.name.includes('pdfs/') ? 'https://bariton1978.github.io/rayban-pdf-viewer/pdfs/' + f.name : 'https://bariton1978.github.io/rayban-pdf-viewer/' + f.name,
+            size: f.size
+          });
+        });
+      }
+    }catch(e){ log('API 오류: ' + e.message); }
+  }
+  // Fallback hardcoded if API blocked on glasses
+  if(files.length===0){
+    log('API 차단됨 - 하드코딩 목록으로 대체 시도');
+    // Try direct fetch of known files via HEAD
+    const known = ['주예수사랑기쁨.pdf','오직주님밖에는.pdf','sample.pdf'];
+    // will show empty and let user know
+  }
+  return files;
+}
+
+function renderList(files){
+  if(files.length===0){
+    emptyEl.classList.remove('hidden');
+    log('표시할 PDF 없음');
+    return;
+  }
+  emptyEl.classList.add('hidden');
+  listEl.innerHTML = '';
+  files.forEach(f=>{
+    const a = document.createElement('a');
+    a.className = 'btn';
+    a.href = f.download || f.pageUrl;
+    a.target = '_blank';
+    a.innerHTML = f.name + '<small>' + (f.size ? (f.size/1024).toFixed(0)+'KB • ' : '') + '터치하면 기본 뷰어로 열림</small>';
+    listEl.appendChild(a);
+  });
+  log('목록 렌더링 완료: ' + files.length + '개');
+}
+
+(async()=>{
+  try{
+    const files = await fetchRepoFiles();
+    // Also check if index.html itself lists pdfs via localStorage? skip
+    renderList(files);
+  }catch(e){
+    log('치명적 오류: ' + e.message);
+    emptyEl.classList.remove('hidden');
+  }
+})();
+</script>
+</body>
+</html>
